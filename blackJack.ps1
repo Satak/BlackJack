@@ -1,6 +1,49 @@
 ﻿cls
 $nl = [System.Environment]::NewLine
 $bankLog = $false
+
+Class Bank {
+        [string]$Transaction
+        [int]$Amount
+        [string]$Date
+        [int]$Total
+
+        Bank([string]$_Transaction,[int]$_Amount,[string]$_Date,[int]$_Total){
+
+            $this.Transaction = $_Transaction
+            $this.Amount = $_Amount
+            $this.Date = $_Date
+            $this.Total = $_Total
+        }
+}
+
+Class Card{
+	[int]$Suite
+	[int]$Number
+	
+	Card($_Suite, $_Number){
+		$this.Suite = $_Suite
+		$this.Number = $_Number
+	}
+	
+	[object]GetCard(){
+		return [psObject]@{
+                Suite = [suite]$this.Suite
+                Number = $this.Number
+                }
+	}
+}
+
+Class Player {
+    $name
+    [int]$money = 100
+
+    Player($_name){
+        $this.name = $_name
+    }
+
+}
+
 Enum Suite{
 	Club = 1
 	Diamond = 2
@@ -32,33 +75,6 @@ param($suite)
     }
 }
 
-Class Card{
-	[int]$Suite
-	[int]$Number
-	
-	Card($_Suite, $_Number){
-		$this.Suite = $_Suite
-		$this.Number = $_Number
-	}
-	
-	[object]GetCard(){
-		return [psObject]@{
-                Suite = [suite]$this.Suite
-                Number = $this.Number
-                }
-	}
-}
-
-Class Player {
-    $name
-    [int]$money = 100
-
-    Player($_name){
-        $this.name = $_name
-    }
-
-}
-
 function Shuffle-Deck {
 param(
 $deck
@@ -81,7 +97,6 @@ function Calculate-Hand {
 param(
 $hand
 )
-
     $tulos = 0
     $newSum = 0
     $newHand = New-Object System.Collections.ArrayList
@@ -91,42 +106,26 @@ $hand
         if($_ -gt 10){$_ = 10}  
         $newHand.add($_) | out-null
     })
-    
 
     if(!$newHand.Contains(1)){
         #normal case
         $options.add(($newHand | Measure-Object -sum).sum) | out-null
 
-
     } else {
 
         $sumwithoutA = ($newHand | Measure-Object -sum).sum - ($newHand |where {$_ -eq 1}).count
-
         $newSum = ($sumwithoutA + ($newHand | where {$_ -eq 1}).count)-1
-        
 
         if($newSum + 11 -le 21){
-             
-        
             $options.add(($newSum + 11)) | out-null
-
             if($newSum + 11 -ne 21){
                 $options.add(($newSum + 1)) | out-null
             }
-
-
-        } else {
-            
-            
+        } else {  
             $options.add(($newSum + 1)) | out-null
-        }
-
-        
-        
+        }  
     }
-
     return $options
-
 }
 
 function PrintOut-Card{
@@ -232,21 +231,6 @@ param([switch]$win)
     }
 }
 
-Class Bank {
-        [string]$Transaction
-        [int]$Amount
-        [string]$Date
-        [int]$Total
-
-        Bank([string]$_Transaction,[int]$_Amount,[string]$_Date,[int]$_Total){
-
-            $this.Transaction = $_Transaction
-            $this.Amount = $_Amount
-            $this.Date = $_Date
-            $this.Total = $_Total
-        }
-}
-
 function Transaction-Bank {
 param($bet,[switch]$win)
 
@@ -315,22 +299,15 @@ $html | out-file "C:\_Powershell\BlackJack\bank.html"
 
 }
 
+$yourName = Read-Host "Give your name"
+$player = [player]::new($yourName)
 
-$player = [player]::new("Sami")
-$deck = New-Object System.Collections.ArrayList
-
-    1..4 | % {
-        $suite = $_
-        1..13 | % {
-            $deck.Add([Card]::New($suite,$_)) | out-null
-        }  
-    }
-
-    
-
-    while($true){
+#game loop
+while($true){
+    #empty deck array
     $deck = New-Object System.Collections.ArrayList
 
+    #add cards in order to the empty deck array list
     1..4 | % {
         $suite = $_
         1..13 | % {
@@ -338,11 +315,13 @@ $deck = New-Object System.Collections.ArrayList
         }  
     }
 
+    #new array list for shuffled deck
     [System.Collections.ArrayList]$newDeck = Shuffle-Deck -deck $deck
 
     $playerHand = New-Object System.Collections.ArrayList
     $houseHand = New-Object System.Collections.ArrayList
 
+    #ask bet until it's a integer and lower amount what the player can afford
     do{
         $bet = $null
         [string]$bet = Read-Host "How much (max: $($player.money) $) do you bet?"
@@ -356,6 +335,7 @@ $deck = New-Object System.Collections.ArrayList
 
     Bet-Money -player $player -amount $bet
 
+    #get 2 cards each from deck
     0..3 | % {
         if($_ % 2 -eq 0){
             Get-CardFromDeck -hand $playerHand -deck $newDeck
@@ -403,20 +383,15 @@ $deck = New-Object System.Collections.ArrayList
     }
 
 
-
-
-
     if( ($sumPlayer | measure -Maximum).Maximum -gt 21 -or ($sumHouse | measure -Maximum).Maximum -gt ($sumPlayer | measure -Maximum).Maximum -and ($sumHouse | measure -Maximum).Maximum -lt 22){
         Write-Host "House wins..." -f red
         if($bankLog){Transaction-Bank -bet $bet -win}
-        Play-Sound
-        
+        Play-Sound    
     } elseif( ($sumPlayer | measure -Maximum).Maximum -eq ($sumHouse | measure -Maximum).Maximum -and ($sumPlayer | measure -Maximum).Maximum -le 21 -and ($sumHouse | measure -Maximum).Maximum -le 21){
         Write-Host "Push..." -f Magenta
         Give-MoneyToPlayer -player $player -bet $bet -sum $sumPlayer -blackJack $blackJack -push
     } else {
-        Write-Host "Player wins!" -f green
-        
+        Write-Host "Player wins!" -f green 
         Give-MoneyToPlayer -player $player -bet $bet -sum $sumPlayer -blackJack $blackJack
         Play-Sound -win 
     }
@@ -428,14 +403,6 @@ $deck = New-Object System.Collections.ArrayList
         break
     }
 
-    }
+}
 
-
- 
-
- Draw-Graph
-
-
-
-
- 
+Draw-Graph
