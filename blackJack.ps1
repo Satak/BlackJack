@@ -207,9 +207,10 @@ param($hand,$sumPlayer,$sumHouse,$deck)
             Get-CardFromDeck -hand $hand -deck $deck
             $sumHouse = Calculate-Hand -hand $hand.number
             write-host "House hand, sum: $sumHouse"
-            PrintOut-Card -hand $hand
+            #PrintOut-Card -hand $hand
 
             if ($sumHouse -eq 21){
+                #PrintOut-Card -hand $hand
                 break
             }
         } until ( ($sumHouse | measure -Maximum).maximum -gt ($sumPlayer | measure -Maximum).Maximum -or ($sumHouse | measure -Maximum).maximum -in 17..21)
@@ -347,31 +348,34 @@ while($true){
     $sumHouse = $null
     $sumPlayer = $null
 
+    $houseHandOne = Calculate-Hand -hand $houseHand[0].number
+    
     $calcPL = Calculate-Hand -hand $playerHand.number
     $calcHouse = Calculate-Hand -hand $houseHand.number
 
-    write-output "Player hand, sum: $calcPL vs $calcHouse"
+    write-output "Player hand, sum: $calcPL vs $houseHandOne"
     PrintOut-Card -hand $playerHand
 
     $nl
 
-    write-output "House hand, sum: $calcHouse"
-    PrintOut-Card -hand $houseHand
+    write-output "House hand, sum: $houseHandOne"
+    PrintOut-Card -hand $houseHand[0]
     $blackJack = $false
     if($calcPL -eq 21 -or $calcHouse -eq 21){
+        PrintOut-Card -hand $houseHand[1]
         Write-Host "*** Blackjack! ***" -b green -f black
         $sumPlayer = $calcPL
         $sumHouse = $calcHouse
         $blackJack = $true
 
     } else {
-
+        
+        #player plays
         if (($calcPL | measure -Maximum).Maximum -ne 21){
-            $sumPlayer = Play-Player -hand $playerHand -sumPlayer $calcPL -sumHouse $calcHouse -deck $newDeck
+            $sumPlayer = Play-Player -hand $playerHand -sumPlayer $calcPL -sumHouse $houseHandOne -deck $newDeck
         }
 
-   
-   
+        #house plays
         if (($calcHouse | measure -Maximum).Maximum -ne 21 -and $sumPlayer -lt 22 -and ($calcHouse | measure -Maximum).Maximum -lt ($sumPlayer | measure -Maximum).Maximum -and ($calcHouse | measure -Maximum).Maximum -notin 17..21){
         
             $sumHouse = Play-House -hand $houseHand -sumPlayer $sumPlayer -sumHouse $calcHouse -deck $newDeck
@@ -379,19 +383,24 @@ while($true){
         } else {
             $sumHouse = ($calcHouse | measure -Maximum).Maximum
         }
-    
     }
 
-
     if( ($sumPlayer | measure -Maximum).Maximum -gt 21 -or ($sumHouse | measure -Maximum).Maximum -gt ($sumPlayer | measure -Maximum).Maximum -and ($sumHouse | measure -Maximum).Maximum -lt 22){
+        
         Write-Host "House wins..." -f red
+        Write-Host "House hand($sumHouse):"
+        PrintOut-Card -hand $houseHand
         if($bankLog){Transaction-Bank -bet $bet -win}
         Play-Sound    
     } elseif( ($sumPlayer | measure -Maximum).Maximum -eq ($sumHouse | measure -Maximum).Maximum -and ($sumPlayer | measure -Maximum).Maximum -le 21 -and ($sumHouse | measure -Maximum).Maximum -le 21){
         Write-Host "Push..." -f Magenta
+        Write-Host "House hand ($sumHouse):"
+        PrintOut-Card -hand $houseHand
         Give-MoneyToPlayer -player $player -bet $bet -sum $sumPlayer -blackJack $blackJack -push
     } else {
         Write-Host "Player wins!" -f green 
+        Write-Host "House hand($sumHouse):"
+        PrintOut-Card -hand $houseHand
         Give-MoneyToPlayer -player $player -bet $bet -sum $sumPlayer -blackJack $blackJack
         Play-Sound -win 
     }
@@ -406,3 +415,5 @@ while($true){
 }
 
 Draw-Graph
+
+#new
