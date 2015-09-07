@@ -1,5 +1,6 @@
 ﻿cls
 $nl = [System.Environment]::NewLine
+$bankLog = $false
 Enum Suite{
 	Club = 1
 	Diamond = 2
@@ -172,10 +173,10 @@ param($player,$bet,$sum,$blackJack,[switch]$push)
         $player.money += $bet
     } elseif ($sum -eq 21 -and $blackJack){
         $player.money += ($bet * 2.5)
-        Transaction-Bank -bet $($bet*1.5)
+        if($bankLog){Transaction-Bank -bet $($bet*1.5)}
     } else {
         $player.money += ($bet * 2)
-        Transaction-Bank -bet $bet
+        if($bankLog){Transaction-Bank -bet $bet}
     }
     
 }
@@ -407,7 +408,7 @@ $deck = New-Object System.Collections.ArrayList
 
     if( ($sumPlayer | measure -Maximum).Maximum -gt 21 -or ($sumHouse | measure -Maximum).Maximum -gt ($sumPlayer | measure -Maximum).Maximum -and ($sumHouse | measure -Maximum).Maximum -lt 22){
         Write-Host "House wins..." -f red
-        Transaction-Bank -bet $bet -win
+        if($bankLog){Transaction-Bank -bet $bet -win}
         Play-Sound
         
     } elseif( ($sumPlayer | measure -Maximum).Maximum -eq ($sumHouse | measure -Maximum).Maximum -and ($sumPlayer | measure -Maximum).Maximum -le 21 -and ($sumHouse | measure -Maximum).Maximum -le 21){
