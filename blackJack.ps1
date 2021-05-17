@@ -1,250 +1,313 @@
-﻿cls
+﻿Clear-Host
+
 $nl = [System.Environment]::NewLine
 $bankLog = $false
 
-Class Bank {
-        [string]$Transaction
-        [int]$Amount
-        [string]$Date
-        [int]$Total
+Class Bank
+{
+    [string]$Transaction
+    [int]$Amount
+    [string]$Date
+    [int]$Total
 
-        Bank([string]$_Transaction,[int]$_Amount,[string]$_Date,[int]$_Total){
+    Bank([string]$_Transaction,[int]$_Amount,[string]$_Date,[int]$_Total)
+    {
 
-            $this.Transaction = $_Transaction
-            $this.Amount = $_Amount
-            $this.Date = $_Date
-            $this.Total = $_Total
+        $this.Transaction = $_Transaction
+        $this.Amount = $_Amount
+        $this.Date = $_Date
+        $this.Total = $_Total
+    }
+}
+
+Class Card
+{
+    [int]$Suite
+    [int]$Number
+
+    Card($_Suite, $_Number)
+    {
+        $this.Suite = $_Suite
+        $this.Number = $_Number
+    }
+
+    [object]GetCard()
+    {
+        return [psObject]@{
+            Suite = [suite]$this.Suite
+            Number = $this.Number
         }
+    }
 }
 
-Class Card{
-	[int]$Suite
-	[int]$Number
-	
-	Card($_Suite, $_Number){
-		$this.Suite = $_Suite
-		$this.Number = $_Number
-	}
-	
-	[object]GetCard(){
-		return [psObject]@{
-                Suite = [suite]$this.Suite
-                Number = $this.Number
-                }
-	}
-}
-
-Class Player {
+Class Player
+{
     $name
     [int]$money = 100
 
-    Player($_name){
+    Player($_name)
+    {
         $this.name = $_name
     }
 
 }
 
-Enum Suite{
-	Club = 1
-	Diamond = 2
-	Heart = 3
-	Spade = 4
+Enum Suite
+{
+    Club = 1
+    Diamond = 2
+    Heart = 3
+    Spade = 4
 }
 
-function GetIcon {
-param($suite)
+function GetIcon
+{
+    param($suite)
 
-    switch($suite){
+    switch($suite)
+    {
 
-        1 {return "♣"}
-        2 {return "♦"}
-        3 {return "♥"}
-        4 {return "♠"}
+        1
+        {return "♣"
+        }
+        2
+        {return "♦"
+        }
+        3
+        {return "♥"
+        }
+        4
+        {return "♠"
+        }
     }
 }
 
-function GetColor {
-param($suite)
+function GetColor
+{
+    param($suite)
 
-    switch($suite){
+    switch($suite)
+    {
 
-        1 {return "Black"}
-        2 {return "Red"}
-        3 {return "Red"}
-        4 {return "Black"}
+        1
+        {return "Black"
+        }
+        2
+        {return "Red"
+        }
+        3
+        {return "Red"
+        }
+        4
+        {return "Black"
+        }
     }
 }
 
-function Shuffle-Deck {
-param(
-$deck
-)
+function Shuffle-Deck
+{
+    param(
+        $deck
+    )
 
-$newDeck = New-Object System.Collections.ArrayList
+    $newDeck = New-Object System.Collections.ArrayList
 
-while ($deck.Count -gt 0){
-    $cardNumber = get-random -Minimum 0 -Maximum $deck.Count
-    $card = $deck[$cardNumber]
+    while ($deck.Count -gt 0)
+    {
+        $cardNumber = get-random -Minimum 0 -Maximum $deck.Count
+        $card = $deck[$cardNumber]
 
-    $deck.Remove($deck[$cardNumber]) | out-null
+        $deck.Remove($deck[$cardNumber]) | out-null
 
-    $newDeck.Add($card) | out-null
-}
+        $newDeck.Add($card) | out-null
+    }
     return $newDeck
 }
 
-function Calculate-Hand {
-param(
-$hand
-)
+function Calculate-Hand
+{
+    param(
+        $hand
+    )
     $tulos = 0
     $newSum = 0
     $newHand = New-Object System.Collections.ArrayList
     $options = New-Object System.Collections.ArrayList
 
     $hand.ForEach({
-        if($_ -gt 10){$_ = 10}  
-        $newHand.add($_) | out-null
-    })
+            if($_ -gt 10)
+            {$_ = 10
+            }
+            $newHand.add($_) | out-null
+        })
 
-    if(!$newHand.Contains(1)){
+    if(!$newHand.Contains(1))
+    {
         #normal case
         $options.add(($newHand | Measure-Object -sum).sum) | out-null
 
-    } else {
+    } else
+    {
 
         $sumwithoutA = ($newHand | Measure-Object -sum).sum - ($newHand |where {$_ -eq 1}).count
         $newSum = ($sumwithoutA + ($newHand | where {$_ -eq 1}).count)-1
 
-        if($newSum + 11 -le 21){
+        if($newSum + 11 -le 21)
+        {
             $options.add(($newSum + 11)) | out-null
-            if($newSum + 11 -ne 21){
+            if($newSum + 11 -ne 21)
+            {
                 $options.add(($newSum + 1)) | out-null
             }
-        } else {  
+        } else
+        {
             $options.add(($newSum + 1)) | out-null
-        }  
+        }
     }
     return $options
 }
 
-function PrintOut-Card{
-param($hand)
+function PrintOut-Card
+{
+    param($hand)
 
     $hand.ForEach({
-        Write-Host "$(GetIcon -suite $_.suite) $(Switch ($_.Number){
+            Write-Host "$(GetIcon -suite $_.suite) $(Switch ($_.Number){
 
             11 {"J"}
             12 {"Q"}
             13 {"K"}
             1  {"A"}
             default {$_}
-                
+
         } )" -f $(GetColor -suite $_.suite) -b white
-    })
+        })
 }
 
-function Get-CardFromDeck {
-param(
-    $hand,
-    $deck
-)
+function Get-CardFromDeck
+{
+    param(
+        $hand,
+        $deck
+    )
     $card = $deck[0]
     $deck.Remove($deck[0]) | out-null
     $hand.add($card) | out-null
     $deck.add($card) | out-null
 }
 
-function Bet-Money {
-param($player,$amount)
+function Bet-Money
+{
+    param($player,$amount)
 
-    if($amount -le $player.money){
+    if($amount -le $player.money)
+    {
 
         $player.money -= $amount
 
     }
 }
 
-function Give-MoneyToPlayer {
-param($player,$bet,$sum,$blackJack,[switch]$push)
+function Give-MoneyToPlayer
+{
+    param($player,$bet,$sum,$blackJack,[switch]$push)
 
-    if($push){
+    if($push)
+    {
         $player.money += $bet
-    } elseif ($sum -eq 21 -and $blackJack){
+    } elseif ($sum -eq 21 -and $blackJack)
+    {
         $player.money += ($bet * 2.5)
-        if($bankLog){Transaction-Bank -bet $($bet*1.5)}
-    } else {
+        if($bankLog)
+        {Transaction-Bank -bet $($bet*1.5)
+        }
+    } else
+    {
         $player.money += ($bet * 2)
-        if($bankLog){Transaction-Bank -bet $bet}
+        if($bankLog)
+        {Transaction-Bank -bet $bet
+        }
     }
-    
+
 }
 
-function Play-Player {
+function Play-Player
+{
     param($hand, $sumPlayer, $sumHouse, $deck)
 
-        do{
+    do
+    {
 
-            $read = Read-Host "Hit?"
-            
-            if($read -ne "N"){
-                Get-CardFromDeck -hand $hand -deck $deck
-                $sumPlayer = Calculate-Hand -hand $hand.number
-                write-host "Player hand, sum: $sumPlayer vs $sumHouse"
-                PrintOut-Card -hand $hand
-            }
+        $read = Read-Host "Hit?"
 
-          
-        } until($sumPlayer -ge 21 -or $read -eq "N")
-
-        return $sumPlayer
-}
-
-function Play-House {
-param($hand,$sumPlayer,$sumHouse,$deck)
-
-        do{
+        if($read -ne "N")
+        {
             Get-CardFromDeck -hand $hand -deck $deck
-            $sumHouse = Calculate-Hand -hand $hand.number
-            write-host "House hand, sum: $sumHouse"
-            #PrintOut-Card -hand $hand
+            $sumPlayer = Calculate-Hand -hand $hand.number
+            write-host "Player hand, sum: $sumPlayer vs $sumHouse"
+            PrintOut-Card -hand $hand
+        }
 
-            if ($sumHouse -eq 21){
-                #PrintOut-Card -hand $hand
-                break
-            }
-        } until ( ($sumHouse | measure -Maximum).maximum -gt ($sumPlayer | measure -Maximum).Maximum -or ($sumHouse | measure -Maximum).maximum -in 17..21)
 
-        return $sumHouse
+    } until($sumPlayer -ge 21 -or $read -eq "N")
+
+    return $sumPlayer
 }
 
-function Play-Sound {
-param([switch]$win)
+function Play-House
+{
+    param($hand,$sumPlayer,$sumHouse,$deck)
 
-    if($win){
+    do
+    {
+        Get-CardFromDeck -hand $hand -deck $deck
+        $sumHouse = Calculate-Hand -hand $hand.number
+        write-host "House hand, sum: $sumHouse"
+        #PrintOut-Card -hand $hand
+
+        if ($sumHouse -eq 21)
+        {
+            #PrintOut-Card -hand $hand
+            break
+        }
+    } until ( ($sumHouse | measure -Maximum).maximum -gt ($sumPlayer | measure -Maximum).Maximum -or ($sumHouse | measure -Maximum).maximum -in 17..21)
+
+    return $sumHouse
+}
+
+function Play-Sound
+{
+    param([switch]$win)
+
+    if($win)
+    {
         [console]::beep(262,80)
         [console]::beep(330,80)
         [console]::beep(392,80)
         [console]::beep(523,100)
-    } else {
+    } else
+    {
         [console]::beep(185,200)
         [console]::beep(131,800)
     }
 }
 
-function Transaction-Bank {
-param($bet,[switch]$win)
+function Transaction-Bank
+{
+    param($bet,[switch]$win)
 
-        $path = "C:\_Powershell\BlackJack\bank.csv"
-        $csvFile = Import-Csv $path
-        $date = (Get-Date -Format g).ToString()
-        [int]$total = $csvFile[-1].Total
+    $path = "C:\_Powershell\BlackJack\bank.csv"
+    $csvFile = Import-Csv $path
+    $date = (Get-Date -Format g).ToString()
+    [int]$total = $csvFile[-1].Total
 
-    if ($win){
+    if ($win)
+    {
         $total += $bet
         $bank = [Bank]::new('+',$bet,$date,$total)
         $Bank | select Transaction,Amount,Date,Total | Export-Csv $path -NoTypeInformation -Force -append
-    } else {
+    } else
+    {
         $total -= $bet
         $bank = [Bank]::new('-',$bet,$date,$total)
         $Bank | select Transaction,Amount,Date,Total | Export-Csv $path -NoTypeInformation -Force -append
@@ -252,18 +315,20 @@ param($bet,[switch]$win)
 
 }
 
-function Draw-Graph {
+function Draw-Graph
+{
 
-$path = "C:\_Powershell\BlackJack\bank.csv"
-$csvFile = Import-Csv $path
+    $path = "C:\_Powershell\BlackJack\bank.csv"
+    $csvFile = Import-Csv $path
 
- $i = 0
- $bankMoney = foreach ($t in $csvFile.total){
-     "[$i, $t], "
-     $i++
- }
+    $i = 0
+    $bankMoney = foreach ($t in $csvFile.total)
+    {
+        "[$i, $t], "
+        $i++
+    }
 
-$html = @"
+    $html = @"
 <html>
   <head>
     <script type='text/javascript' src='https://www.google.com/jsapi'></script>
@@ -296,15 +361,16 @@ function drawBasic() {
 </html>
 "@
 
-$html | out-file "C:\_Powershell\BlackJack\bank.html"
+    $html | out-file "C:\_Powershell\BlackJack\bank.html"
 
 }
 
 $yourName = Read-Host "Give your name"
 $player = [player]::new($yourName)
 
-#game loop
-while($true){
+# game loop
+while($true)
+{
     #empty deck array
     $deck = New-Object System.Collections.ArrayList
 
@@ -313,7 +379,7 @@ while($true){
         $suite = $_
         1..13 | % {
             $deck.Add([Card]::New($suite,$_)) | out-null
-        }  
+        }
     }
 
     #new array list for shuffled deck
@@ -323,24 +389,29 @@ while($true){
     $houseHand = New-Object System.Collections.ArrayList
 
     #ask bet until it's a integer and lower amount what the player can afford
-    do{
+    do
+    {
+        Clear-Host
         $bet = $null
         [string]$bet = Read-Host "How much (max: $($player.money) $) do you bet?"
 
-        if ($bet -match "^\d+$"){
-                [int]$bet = $bet
+        if ($bet -match "^\d+$")
+        {
+            [int]$bet = $bet
         }
 
     }until($bet -match "^\d+$" -and $bet -le $player.money )
-    
+
 
     Bet-Money -player $player -amount $bet
 
     #get 2 cards each from deck
     0..3 | % {
-        if($_ % 2 -eq 0){
+        if($_ % 2 -eq 0)
+        {
             Get-CardFromDeck -hand $playerHand -deck $newDeck
-        } else {
+        } else
+        {
             Get-CardFromDeck -hand $houseHand -deck $newDeck
         }
     }
@@ -349,7 +420,7 @@ while($true){
     $sumPlayer = $null
 
     $houseHandOne = Calculate-Hand -hand $houseHand[0].number
-    
+
     $calcPL = Calculate-Hand -hand $playerHand.number
     $calcHouse = Calculate-Hand -hand $houseHand.number
 
@@ -361,60 +432,68 @@ while($true){
     write-output "House hand, sum: $houseHandOne"
     PrintOut-Card -hand $houseHand[0]
     $blackJack = $false
-    if($calcPL -eq 21 -or $calcHouse -eq 21){
+    if($calcPL -eq 21 -or $calcHouse -eq 21)
+    {
         PrintOut-Card -hand $houseHand[1]
         Write-Host "*** Blackjack! ***" -b green -f black
         $sumPlayer = $calcPL
         $sumHouse = $calcHouse
         $blackJack = $true
 
-    } else {
-        
+    } else
+    {
+
         #player plays
-        if (($calcPL | measure -Maximum).Maximum -ne 21){
+        if (($calcPL | measure -Maximum).Maximum -ne 21)
+        {
             $sumPlayer = Play-Player -hand $playerHand -sumPlayer $calcPL -sumHouse $houseHandOne -deck $newDeck
         }
 
         #house plays
-        if (($calcHouse | measure -Maximum).Maximum -ne 21 -and $sumPlayer -lt 22 -and ($calcHouse | measure -Maximum).Maximum -lt ($sumPlayer | measure -Maximum).Maximum -and ($calcHouse | measure -Maximum).Maximum -notin 17..21){
-        
+        if (($calcHouse | measure -Maximum).Maximum -ne 21 -and $sumPlayer -lt 22 -and ($calcHouse | measure -Maximum).Maximum -lt ($sumPlayer | measure -Maximum).Maximum -and ($calcHouse | measure -Maximum).Maximum -notin 17..21)
+        {
+
             $sumHouse = Play-House -hand $houseHand -sumPlayer $sumPlayer -sumHouse $calcHouse -deck $newDeck
 
-        } else {
+        } else
+        {
             $sumHouse = ($calcHouse | measure -Maximum).Maximum
         }
     }
 
-    if( ($sumPlayer | measure -Maximum).Maximum -gt 21 -or ($sumHouse | measure -Maximum).Maximum -gt ($sumPlayer | measure -Maximum).Maximum -and ($sumHouse | measure -Maximum).Maximum -lt 22){
-        
+    if( ($sumPlayer | measure -Maximum).Maximum -gt 21 -or ($sumHouse | measure -Maximum).Maximum -gt ($sumPlayer | measure -Maximum).Maximum -and ($sumHouse | measure -Maximum).Maximum -lt 22)
+    {
+
         Write-Host "House wins..." -f red
         Write-Host "House hand($sumHouse):"
         PrintOut-Card -hand $houseHand
-        if($bankLog){Transaction-Bank -bet $bet -win}
-        Play-Sound    
-    } elseif( ($sumPlayer | measure -Maximum).Maximum -eq ($sumHouse | measure -Maximum).Maximum -and ($sumPlayer | measure -Maximum).Maximum -le 21 -and ($sumHouse | measure -Maximum).Maximum -le 21){
+        if($bankLog)
+        {Transaction-Bank -bet $bet -win
+        }
+        Play-Sound
+    } elseif( ($sumPlayer | measure -Maximum).Maximum -eq ($sumHouse | measure -Maximum).Maximum -and ($sumPlayer | measure -Maximum).Maximum -le 21 -and ($sumHouse | measure -Maximum).Maximum -le 21)
+    {
         Write-Host "Push..." -f Magenta
         Write-Host "House hand ($sumHouse):"
         PrintOut-Card -hand $houseHand
         Give-MoneyToPlayer -player $player -bet $bet -sum $sumPlayer -blackJack $blackJack -push
-    } else {
-        Write-Host "Player wins!" -f green 
+    } else
+    {
+        Write-Host "Player wins!" -f green
         Write-Host "House hand($sumHouse):"
         PrintOut-Card -hand $houseHand
         Give-MoneyToPlayer -player $player -bet $bet -sum $sumPlayer -blackJack $blackJack
-        Play-Sound -win 
+        Play-Sound -win
     }
 
     write-output "Player money $($player.money) $"
-    
 
-    if($player.money -le 0){
+
+    if($player.money -le 0)
+    {
         break
     }
 
 }
 
-#Draw-Graph
-
-#new
-#comment
+# Draw-Graph
